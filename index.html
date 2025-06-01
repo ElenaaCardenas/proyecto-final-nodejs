@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Recursos Humanos</title>
+  <style>
+    body {
+      background-color: #f4f6f8;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    main {
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1, h2 {
+      color: #2c3e50;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+    button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1c5980;
+    }
+    section {
+      background-color: white;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background-color: #ecf0f1;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Panel de Recursos Humanos</h1>
+  <p>Administra empleados de forma segura</p>
+</header>
+
+<main>
+  <section>
+    <h2>1. Iniciar sesión</h2>
+    <input id="login-username" placeholder="Usuario" />
+    <input id="login-password" placeholder="Contraseña" type="password" />
+    <button onclick="login()">Iniciar sesión</button>
+    <p id="tokenDisplay" class="success"></p>
+  </section>
+
+  <section>
+    <h2>2. Agregar empleado</h2>
+    <input id="emp-name" placeholder="Nombre" />
+    <input id="emp-lastname" placeholder="Apellido" />
+    <input id="emp-phone" placeholder="Teléfono" />
+    <input id="emp-email" placeholder="Correo electrónico" />
+    <input id="emp-address" placeholder="Dirección" />
+    <button onclick="agregarEmpleado()">Guardar empleado</button>
+  </section>
+
+  <section>
+    <h2>3. Ver empleados</h2>
+    <button onclick="verEmpleados()">Mostrar lista</button>
+    <ul id="empleadosList"></ul>
+  </section>
+</main>
+
+<script>
+  let token = "";
+
+  function login() {
+    const username = document.getElementById("login-username").value;
+    const password = document.getElementById("login-password").value;
+
+    fetch("http://localhost:3000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.token) {
+        token = data.token;
+        document.getElementById("tokenDisplay").innerText = "✅ Sesión iniciada correctamente";
+      } else {
+        document.getElementById("tokenDisplay").innerText = "❌ Error al iniciar sesión";
+      }
+    });
+  }
+
+  function agregarEmpleado() {
+    const emp = {
+      name: document.getElementById("emp-name").value,
+      lastName: document.getElementById("emp-lastname").value,
+      phone: document.getElementById("emp-phone").value,
+      email: document.getElementById("emp-email").value,
+      address: document.getElementById("emp-address").value,
+    };
+
+    fetch("http://localhost:3000/api/employees", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(emp)
+    })
+    .then(res => res.json())
+    .then(data => alert("✅ Empleado agregado correctamente"));
+  }
+
+  function verEmpleados() {
+    fetch("http://localhost:3000/api/employees", {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("empleadosList");
+      list.innerHTML = "";
+      data.forEach(emp => {
+        const item = document.createElement("li");
+        item.innerText = emp.name + " " + emp.lastName;
+        list.appendChild(item);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
