@@ -2,219 +2,102 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Sistema RRHH</title>
+  <title>Dashboard RRHH</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f2f4f8;
+      font-family: 'Open Sans', sans-serif;
+      background-color: #f5f7fa;
       color: #333;
     }
-    .container {
-      max-width: 800px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h1, h2 {
-      color: #2c3e50;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      font-size: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #3498db;
+
+    header {
+      background-color: #2c3e50;
       color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2980b9;
-    }
-    #empleado-panel {
-      display: none;
-    }
-    li {
-      background: #ecf0f1;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 5px;
+      padding: 15px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .actions button {
-      margin-left: 10px;
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    header button {
       background: #e74c3c;
+      border: none;
+      padding: 8px 16px;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
     }
-    .actions button.edit {
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #34495e;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    .card {
+      background: #ecf0f1;
+      border-radius: 5px;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card span {
+      font-weight: 600;
+    }
+
+    .card .actions button {
       background: #27ae60;
+      margin-left: 5px;
     }
-    .actions button:hover {
-      filter: brightness(0.9);
+
+    .card .actions button.delete {
+      background: #c0392b;
     }
+
+    #empleado-panel { display: none; }
   </style>
 </head>
 <body>
-
-<div class="container" id="login-panel">
-  <h1>Iniciar sesión</h1>
-  <input type="text" id="login-username" placeholder="Usuario">
-  <input type="password" id="login-password" placeholder="Contraseña">
-  <button onclick="login()">Ingresar</button>
-  <p id="login-error" style="color: red;"></p>
-</div>
-
-<div class="container" id="empleado-panel">
-  <h2>Agregar o Editar Empleado</h2>
-  <input id="emp-name" placeholder="Nombre" />
-  <input id="emp-lastname" placeholder="Apellido" />
-  <input id="emp-phone" placeholder="Teléfono" />
-  <input id="emp-email" placeholder="Correo electrónico" />
-  <input id="emp-address" placeholder="Dirección" />
-  <button onclick="guardarEmpleado()">Guardar</button>
-
-  <h2>Buscar empleados</h2>
-  <input id="emp-search" placeholder="Buscar por nombre..." oninput="buscarEmpleado()" />
-
-  <h2>Lista de Empleados</h2>
-  <button onclick="verEmpleados()">Actualizar lista</button>
-  <ul id="empleadosList"></ul>
-
-  <button onclick="logout()" style="background:#7f8c8d; margin-top:20px;">Cerrar sesión</button>
-</div>
-
-<script>
-  let token = "";
-  let editId = null;
-
-  function login() {
-    const username = document.getElementById("login-username").value;
-    const password = document.getElementById("login-password").value;
-
-    fetch("http://localhost:3000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.token) {
-        token = data.token;
-        document.getElementById("login-panel").style.display = "none";
-        document.getElementById("empleado-panel").style.display = "block";
-        verEmpleados();
-      } else {
-        document.getElementById("login-error").innerText = "Usuario o contraseña incorrectos";
-      }
-    });
-  }
-
-  function logout() {
-    token = "";
-    editId = null;
-    document.getElementById("empleado-panel").style.display = "none";
-    document.getElementById("login-panel").style.display = "block";
-  }
-
-  function guardarEmpleado() {
-    const emp = {
-      name: document.getElementById("emp-name").value,
-      lastName: document.getElementById("emp-lastname").value,
-      phone: document.getElementById("emp-phone").value,
-      email: document.getElementById("emp-email").value,
-      address: document.getElementById("emp-address").value,
-    };
-
-    const method = editId ? "PUT" : "POST";
-    const url = editId
-      ? `http://localhost:3000/api/employees/${editId}`
-      : "http://localhost:3000/api/employees";
-
-    fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(emp)
-    })
-    .then(res => res.json())
-    .then(() => {
-      alert(editId ? "Empleado actualizado" : "Empleado guardado");
-      limpiarCampos();
-      verEmpleados();
-    });
-  }
-
-  function limpiarCampos() {
-    editId = null;
-    document.getElementById("emp-name").value = "";
-    document.getElementById("emp-lastname").value = "";
-    document.getElementById("emp-phone").value = "";
-    document.getElementById("emp-email").value = "";
-    document.getElementById("emp-address").value = "";
-  }
-
-  function verEmpleados() {
-    fetch("http://localhost:3000/api/employees", {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => mostrarLista(data));
-  }
-
-  function mostrarLista(data) {
-    const list = document.getElementById("empleadosList");
-    list.innerHTML = "";
-    data.forEach(emp => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        ${emp.name} ${emp.lastName} - ${emp.email}
-        <span class="actions">
-          <button class="edit" onclick="cargarEmpleado('${emp._id}', '${emp.name}', '${emp.lastName}', '${emp.phone}', '${emp.email}', '${emp.address}')">📝</button>
-          <button onclick="eliminarEmpleado('${emp._id}')">🗑️</button>
-        </span>
-      `;
-      list.appendChild(li);
-    });
-  }
-
-  function cargarEmpleado(id, name, lastName, phone, email, address) {
-    editId = id;
-    document.getElementById("emp-name").value = name;
-    document.getElementById("emp-lastname").value = lastName;
-    document.getElementById("emp-phone").value = phone;
-    document.getElementById("emp-email").value = email;
-    document.getElementById("emp-address").value = address;
-  }
-
-  function eliminarEmpleado(id) {
-    if (!confirm("¿Eliminar este empleado?")) return;
-
-    fetch(`http://localhost:3000/api/employees/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(() => verEmpleados());
-  }
-
-  function buscarEmpleado() {
-    const name = document.getElementById("emp-search").value;
-    fetch(`http://localhost:3000/api/employees/search?name=${name}`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => mostrarLista(data));
-  }
-</script>
-
+<!-- El resto del documento lo completamos en la próxima parte -->
 </body>
 </html>
