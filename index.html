@@ -11,7 +11,7 @@
       color: #333;
     }
     .container {
-      max-width: 600px;
+      max-width: 800px;
       margin: 50px auto;
       background: white;
       padding: 30px;
@@ -43,9 +43,22 @@
     }
     li {
       background: #ecf0f1;
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 4px;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .actions button {
+      margin-left: 10px;
+      background: #e74c3c;
+    }
+    .actions button.edit {
+      background: #27ae60;
+    }
+    .actions button:hover {
+      filter: brightness(0.9);
     }
   </style>
 </head>
@@ -60,21 +73,27 @@
 </div>
 
 <div class="container" id="empleado-panel">
-  <h2>Agregar Empleado</h2>
+  <h2>Agregar o Editar Empleado</h2>
   <input id="emp-name" placeholder="Nombre" />
   <input id="emp-lastname" placeholder="Apellido" />
   <input id="emp-phone" placeholder="Teléfono" />
   <input id="emp-email" placeholder="Correo electrónico" />
   <input id="emp-address" placeholder="Dirección" />
-  <button onclick="agregarEmpleado()">Guardar</button>
+  <button onclick="guardarEmpleado()">Guardar</button>
+
+  <h2>Buscar empleados</h2>
+  <input id="emp-search" placeholder="Buscar por nombre..." oninput="buscarEmpleado()" />
 
   <h2>Lista de Empleados</h2>
   <button onclick="verEmpleados()">Actualizar lista</button>
   <ul id="empleadosList"></ul>
+
+  <button onclick="logout()" style="background:#7f8c8d; margin-top:20px;">Cerrar sesión</button>
 </div>
 
 <script>
   let token = "";
+  let editId = null;
 
   function login() {
     const username = document.getElementById("login-username").value;
@@ -95,13 +114,17 @@
       } else {
         document.getElementById("login-error").innerText = "Usuario o contraseña incorrectos";
       }
-    })
-    .catch(() => {
-      document.getElementById("login-error").innerText = "Error de conexión con el servidor";
     });
   }
 
-  function agregarEmpleado() {
+  function logout() {
+    token = "";
+    editId = null;
+    document.getElementById("empleado-panel").style.display = "none";
+    document.getElementById("login-panel").style.display = "block";
+  }
+
+  function guardarEmpleado() {
     const emp = {
       name: document.getElementById("emp-name").value,
       lastName: document.getElementById("emp-lastname").value,
@@ -110,8 +133,13 @@
       address: document.getElementById("emp-address").value,
     };
 
-    fetch("http://localhost:3000/api/employees", {
-      method: "POST",
+    const method = editId ? "PUT" : "POST";
+    const url = editId
+      ? `http://localhost:3000/api/employees/${editId}`
+      : "http://localhost:3000/api/employees";
+
+    fetch(url, {
+      method,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
@@ -120,9 +148,19 @@
     })
     .then(res => res.json())
     .then(() => {
-      alert("Empleado guardado");
+      alert(editId ? "Empleado actualizado" : "Empleado guardado");
+      limpiarCampos();
       verEmpleados();
     });
+  }
+
+  function limpiarCampos() {
+    editId = null;
+    document.getElementById("emp-name").value = "";
+    document.getElementById("emp-lastname").value = "";
+    document.getElementById("emp-phone").value = "";
+    document.getElementById("emp-email").value = "";
+    document.getElementById("emp-address").value = "";
   }
 
   function verEmpleados() {
@@ -130,15 +168,51 @@
       headers: { "Authorization": `Bearer ${token}` }
     })
     .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("empleadosList");
-      list.innerHTML = "";
-      data.forEach(emp => {
-        const li = document.createElement("li");
-        li.innerText = emp.name + " " + emp.lastName + " - " + emp.email;
-        list.appendChild(li);
-      });
+    .then(data => mostrarLista(data));
+  }
+
+  function mostrarLista(data) {
+    const list = document.getElementById("empleadosList");
+    list.innerHTML = "";
+    data.forEach(emp => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        ${emp.name} ${emp.lastName} - ${emp.email}
+        <span class="actions">
+          <button class="edit" onclick="cargarEmpleado('${emp._id}', '${emp.name}', '${emp.lastName}', '${emp.phone}', '${emp.email}', '${emp.address}')">📝</button>
+          <button onclick="eliminarEmpleado('${emp._id}')">🗑️</button>
+        </span>
+      `;
+      list.appendChild(li);
     });
+  }
+
+  function cargarEmpleado(id, name, lastName, phone, email, address) {
+    editId = id;
+    document.getElementById("emp-name").value = name;
+    document.getElementById("emp-lastname").value = lastName;
+    document.getElementById("emp-phone").value = phone;
+    document.getElementById("emp-email").value = email;
+    document.getElementById("emp-address").value = address;
+  }
+
+  function eliminarEmpleado(id) {
+    if (!confirm("¿Eliminar este empleado?")) return;
+
+    fetch(`http://localhost:3000/api/employees/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    .then(() => verEmpleados());
+  }
+
+  function buscarEmpleado() {
+    const name = document.getElementById("emp-search").value;
+    fetch(`http://localhost:3000/api/employees/search?name=${name}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => mostrarLista(data));
   }
 </script>
 
